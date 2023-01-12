@@ -1,10 +1,6 @@
 #include "mb_slave.h"
 
-static bool check_crc(char *inp_buff) {
 
-
-  return true;
-}
 
 
 void mb_init(mb_def_t *mb_def, unsigned char id, unsigned short di_count, unsigned short do_count, unsigned short ai_count, unsigned short ao_count) {
@@ -70,6 +66,19 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
     LOGW("Invalid Slave ID");
     return;
   }
+  unsigned char crc_position = 0;
+  if (mb_single_frame->function_code >=READ_COIL_STATUS && mb_single_frame->function_code <= PRESET_SINGLE_REGISTER) {
+    crc_position = 6;
+  }
+  else if (mb_single_frame->function_code >= FORCE_MULITPLE_COIL || mb_single_frame->function_code == PRESET_MULTIPLE_REGISTERS) {
+    crc_position = inp_buff[6] + 7;
+  }
+
+  if (!check_crc(inp_buff, crc_position)) {
+    LOGE("Wrong CRC");
+    return;
+  }
+  
 
   unsigned short reg_address = COMBINE(mb_single_frame->register_address_h, mb_single_frame->register_address_l);
   unsigned short no_of_register = COMBINE(mb_single_frame->value_h, mb_single_frame->value_l);
@@ -124,7 +133,6 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
 
 void mb_get_response(mb_def_t *mbdef, unsigned char **buff, unsigned char *len)
 {
-
   mbdef->output.buff_len = 0;
   mbdef->output.buff_len = mbdef->output.data_len + 3 + 2;
   *len = mbdef->output.buff_len;
@@ -133,4 +141,10 @@ void mb_get_response(mb_def_t *mbdef, unsigned char **buff, unsigned char *len)
   memset(*buff, 0, mbdef->output.buff_len);
   memcpy(*buff, &mbdef->output, 3);
   memcpy((*buff) + 3, (char*)mbdef->output.data_buff, mbdef->output.data_len);
+  if (*buff[0] != 0) {
+    unsigned short crc = calc_crc(*buff, mbdef->output.buff_len - 2);
+    (*buff)[mbdef->output.buff_len - 2] = crc >> 8;
+    (*buff)[mbdef->output.buff_len - 1] = (unsigned char)crc;
+  }
+  memset(&mbdef->output, 0, mbdef->output.buff_len);
 }
