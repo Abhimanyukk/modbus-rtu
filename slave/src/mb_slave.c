@@ -23,17 +23,19 @@ void mb_register_digital_in(mb_def_t *mb_def, unsigned short address, FUNCTION_P
     exit(0);
   }
   mb_def->d_in.params[address].address = address;
-  mb_def->d_in.params[address].function_cb = action;
+  mb_def->d_in.params[address].get = action;
 }
 
-void mb_register_digital_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action) {
+void mb_register_digital_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR set, FUNCTION_PTR get) {
   if (address > mb_def->d_out.size) {
     LOGE("Operation not allowed");
     LOGE("Address more than allocated in function mb_register_digital_out()");
     exit(0);
   }
   mb_def->d_out.params[address].address = address;
-  mb_def->d_out.params[address].function_cb = action;
+  mb_def->d_out.params[address].set = set;
+  mb_def->d_out.params[address].get = get;
+
 }
 
 void mb_register_analog_in(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action) {
@@ -57,10 +59,7 @@ void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_P
 }
 
 void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
-  if (!check_crc(inp_buff)) {
-    LOGE("Wrong CRC");
-    return;
-  }
+  
   mb_single_frame_t *mb_single_frame = (mb_single_frame_t*) inp_buff;
   if (mbdef->id != mb_single_frame->slave_id) {
     LOGW("Invalid Slave ID");
@@ -84,11 +83,14 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
   unsigned short no_of_register = COMBINE(mb_single_frame->value_h, mb_single_frame->value_l);
   unsigned char index = 0; 
 
-  mbdef->output.slave_id = mb_single_frame->slave_id;
   
   switch (mb_single_frame->function_code)
   {
     case READ_COIL_STATUS:
+      break;
+      
+    case READ_INPUT_STATUS:
+      mbdef->output.slave_id = mb_single_frame->slave_id;
       mbdef->output.function_code = READ_COIL_STATUS;
       mbdef->output.data_len = 1;
       mbdef->output.data_buff = malloc((no_of_register / 8) + 1);
@@ -103,15 +105,13 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
           index = 0;
         }
         unsigned char value = 0;
-        mbdef->d_in.params[reg_address].function_cb(&value);
+        mbdef->d_in.params[reg_address].get(&value);
         mbdef->output.data_buff[mbdef->output.data_len - 1] |= (value << index);
         index++;
         reg_address++;
       }
       
       break;
-    case READ_INPUT_STATUS:
-      
     case FORCE_SINGLE_COIL:
       
       break;

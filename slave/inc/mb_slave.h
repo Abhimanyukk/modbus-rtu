@@ -55,7 +55,8 @@ typedef struct {
 
 typedef struct {
   unsigned short address;
-  FUNCTION_PTR function_cb;
+  FUNCTION_PTR get;
+  FUNCTION_PTR set;
   char index;
   reg_access_t access;
 } digital_t;
@@ -101,7 +102,7 @@ typedef struct {
 
 void mb_init(mb_def_t *mb_def, unsigned char id, unsigned short di_count, unsigned short do_count, unsigned short ai_count, unsigned short ao_count);
 void mb_register_digital_in(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action);
-void mb_register_digital_out(mb_def_t *mb_def, unsigned short reg, FUNCTION_PTR action);
+void mb_register_digital_out(mb_def_t *mb_def, unsigned short reg, FUNCTION_PTR set, FUNCTION_PTR get);
 void mb_register_analog_in(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action);
 void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action);
 void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff);
