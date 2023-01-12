@@ -87,11 +87,36 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
   switch (mb_single_frame->function_code)
   {
     case READ_COIL_STATUS:
+      LOGI("Read Coil Status");
+      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.function_code = READ_COIL_STATUS;
+      mbdef->output.data_len = 1;
+      mbdef->output.data_buff = malloc((no_of_register / 8) + 1);
+
+      if (no_of_register > mbdef->d_out.size) {
+        LOGW("Register not assigned");
+        no_of_register = mbdef->d_out.size;
+      }
+
+      while (no_of_register--)
+      {
+        if (index > 7) {
+          mbdef->output.data_len++;
+          index = 0;
+        }
+      
+        unsigned char value = 0;
+        mbdef->d_out.params[reg_address].get(&value);
+        mbdef->output.data_buff[mbdef->output.data_len - 1] |= (value << index);
+        index++;
+        reg_address++;
+      }
       break;
       
     case READ_INPUT_STATUS:
+      LOGI("Read Input Status");
       mbdef->output.slave_id = mb_single_frame->slave_id;
-      mbdef->output.function_code = READ_COIL_STATUS;
+      mbdef->output.function_code = READ_INPUT_STATUS;
       mbdef->output.data_len = 1;
       mbdef->output.data_buff = malloc((no_of_register / 8) + 1);
       
