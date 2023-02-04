@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 #include "mb_crc.h"
 
 #define LOGE(x) printf("ERROR: %s\n", x)
