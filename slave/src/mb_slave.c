@@ -73,7 +73,7 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
     crc_position = inp_buff[6] + 7;
   }
 
-  if (!check_crc(inp_buff, crc_position)) {
+  if (!check_crc((unsigned char *)inp_buff, crc_position)) {
     LOGE("Wrong CRC");
     return;
   }
