@@ -48,14 +48,15 @@ void mb_register_analog_in(mb_def_t *mb_def, unsigned short address, FUNCTION_PT
   mb_def->a_in.params[address].get = action;
 }
 
-void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action) {
+void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR set, FUNCTION_PTR get) {
   if (address > mb_def->a_out.size) {
     LOGE("Operation not allowed");
     LOGE("Address more than allocated in function mb_register_analog_out()");
     exit(0);
   }
   mb_def->a_out.params[address].address = address;
-  mb_def->a_out.params[address].get = action;
+  mb_def->a_out.params[address].set = set;
+  mb_def->a_out.params[address].get = get;
 }
 
 void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
