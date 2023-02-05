@@ -45,7 +45,7 @@ void mb_register_analog_in(mb_def_t *mb_def, unsigned short address, FUNCTION_PT
     exit(0);
   }
   mb_def->a_in.params[address].address = address;
-  mb_def->a_in.params[address].function_cb = action;
+  mb_def->a_in.params[address].get = action;
 }
 
 void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action) {
@@ -55,7 +55,7 @@ void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_P
     exit(0);
   }
   mb_def->a_out.params[address].address = address;
-  mb_def->a_out.params[address].function_cb = action;
+  mb_def->a_out.params[address].get = action;
 }
 
 void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
@@ -137,13 +137,34 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
       }
       
       break;
+    case READ_HOLDING_REGISTER:
+      LOGI("Read Holding Register");
+      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.function_code = READ_HOLDING_REGISTER;
+      mbdef->output.data_len = 0;
+      mbdef->output.data_buff = malloc(no_of_register * 2);
+
+      if (no_of_register > mbdef->a_in.size) {
+        LOGW("Register not assigned");
+        no_of_register = mbdef->a_in.size;
+      }
+
+      while (no_of_register--)
+      {
+        unsigned short value = 0;
+        mbdef->a_in.params[reg_address].get(&value);
+        mbdef->output.data_buff[mbdef->output.data_len++] = (unsigned char)(value >> 8);
+        mbdef->output.data_buff[mbdef->output.data_len++] = (unsigned char)(value);
+      }
+      
+
+      break;
     case FORCE_SINGLE_COIL:
       
       break;
 
     case PRESET_SINGLE_REGISTER:
     case READ_INPUT_REGISTER:
-    case READ_HOLDING_REGISTER:
       break;
 
     case FORCE_MULITPLE_COIL:
