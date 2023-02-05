@@ -63,7 +63,8 @@ typedef struct {
 typedef struct {
   unsigned short address;
   short reg_data;
-  FUNCTION_PTR function_cb;
+  FUNCTION_PTR get;
+  FUNCTION_PTR set;
   reg_access_t access;
 } analog_t;
 
