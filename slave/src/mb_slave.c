@@ -137,8 +137,14 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
       }
       
       break;
+
     case READ_HOLDING_REGISTER:
       LOGI("Read Holding Register");
+      
+      break;
+
+    case READ_INPUT_REGISTER:
+      LOGI("Read Input Register");
       mbdef->output.slave_id = mb_single_frame->slave_id;
       mbdef->output.function_code = READ_HOLDING_REGISTER;
       mbdef->output.data_len = 0;
@@ -156,16 +162,14 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
         mbdef->output.data_buff[mbdef->output.data_len++] = (unsigned char)(value >> 8);
         mbdef->output.data_buff[mbdef->output.data_len++] = (unsigned char)(value);
       }
-      
-
       break;
+
     case FORCE_SINGLE_COIL:
       
       break;
 
     case PRESET_SINGLE_REGISTER:
-    case READ_INPUT_REGISTER:
-      break;
+    
 
     case FORCE_MULITPLE_COIL:
     case PRESET_MULTIPLE_REGISTERS:
