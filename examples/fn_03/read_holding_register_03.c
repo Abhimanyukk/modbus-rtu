@@ -24,10 +24,9 @@ int main()
         mb_register_analog_in(&mb_def, i, get_input_1);
     }
 
-    char in_buff[] = {2, 3, 0, 0, 0, 10, 0, 0};
+    char in_buff[] = {2, 3, 0, 0, 0, 10, 0xFE, 0xC5};
     unsigned char *response = NULL;
     unsigned char len;
-
     mb_set_command_frame(&mb_def, in_buff);
     mb_get_response(&mb_def, &response, &len);
 
