@@ -14,6 +14,11 @@
 #define COMBINE(H, L) (H << 8) | L
 
 typedef enum {
+  CRC_ERROR = -1,
+  SUCCESS
+} error_t;
+
+typedef enum {
   READ_COIL_STATUS = 0x01,
   READ_INPUT_STATUS,
   READ_HOLDING_REGISTER,
