@@ -141,7 +141,23 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
 
     case READ_HOLDING_REGISTER:
       LOGI("Read Holding Register");
-      
+      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.function_code = READ_HOLDING_REGISTER;
+      mbdef->output.data_len = 0;
+      mbdef->output.data_buff = malloc(no_of_register * 2);
+
+      if (no_of_register > mbdef->a_out.size) {
+        LOGW("Register not assigned");
+        no_of_register = mbdef->a_out.size;
+      }
+
+      while (no_of_register--)
+      {
+        unsigned short value = 0;
+        mbdef->a_out.params[reg_address].get(&value);
+        mbdef->output.data_buff[mbdef->output.data_len++] = (unsigned char)(value >> 8);
+        mbdef->output.data_buff[mbdef->output.data_len++] = (unsigned char)(value);
+      }
       break;
 
     case READ_INPUT_REGISTER:
