@@ -14,7 +14,8 @@
 #define COMBINE(H, L) (H << 8) | L
 
 typedef enum {
-  CRC_ERROR = -1,
+  CRC_ERR = -2,
+  SLAVE_ID_ERR,
   SUCCESS
 } error_t;
 
@@ -110,7 +111,7 @@ void mb_register_digital_in(mb_def_t *mb_def, unsigned short address, FUNCTION_P
 void mb_register_digital_out(mb_def_t *mb_def, unsigned short reg, FUNCTION_PTR set, FUNCTION_PTR get);
 void mb_register_analog_in(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR action);
 void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_PTR set, FUNCTION_PTR get);
-void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff);
+error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff);
 void mb_get_response(mb_def_t *mbdef, unsigned char **buff, unsigned char *len);
 
 #endif /* __MB_SLAVE_H__ */

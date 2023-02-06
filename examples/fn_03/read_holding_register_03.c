@@ -36,7 +36,11 @@ int main()
   unsigned char *response = NULL;
   unsigned char len;
 
-  mb_set_command_frame(&mb_def, in_buff);
+  if (mb_set_command_frame(&mb_def, in_buff) != SUCCESS) {
+    LOGE("Input Frame Error");
+    return -1;
+  }
+
   mb_get_response(&mb_def, &response, &len);
 
   for (int i = 0; i < len; i++) {

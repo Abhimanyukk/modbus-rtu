@@ -59,12 +59,12 @@ void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_P
   mb_def->a_out.params[address].get = get;
 }
 
-void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
+error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
   
   mb_single_frame_t *mb_single_frame = (mb_single_frame_t*) inp_buff;
   if (mbdef->id != mb_single_frame->slave_id) {
     LOGW("Invalid Slave ID");
-    return;
+    return SLAVE_ID_ERR;
   }
   unsigned char crc_position = 0;
   if (mb_single_frame->function_code >=READ_COIL_STATUS && mb_single_frame->function_code <= PRESET_SINGLE_REGISTER) {
@@ -76,7 +76,7 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
 
   if (!check_crc((unsigned char *)inp_buff, crc_position)) {
     LOGE("Wrong CRC");
-    return;
+    return CRC_ERR;
   }
   
 
@@ -195,6 +195,7 @@ void mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
     default:
       break;
   }
+  return SUCCESS;
 }
 
 
