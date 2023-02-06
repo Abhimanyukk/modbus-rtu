@@ -20,7 +20,7 @@ static void get_output_1(void *value)
   /**
    * Write the user here and pass value as 0 or 1 to **value**
   */
-  *(char*)value = 1;
+  *(unsigned short*)value = 0x1234;
 }
 
 int main()
