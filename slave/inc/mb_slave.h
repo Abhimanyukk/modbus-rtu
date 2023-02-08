@@ -102,6 +102,7 @@ typedef struct {
   analog_input_t a_in;
   analog_output_t a_out;
   mb_out_frame_t output;
+  mb_single_frame_t *mb_single_frame;
 } mb_def_t;
 
 

@@ -60,17 +60,16 @@ void mb_register_analog_out(mb_def_t *mb_def, unsigned short address, FUNCTION_P
 }
 
 error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
-  
-  mb_single_frame_t *mb_single_frame = (mb_single_frame_t*) inp_buff;
-  if (mbdef->id != mb_single_frame->slave_id) {
+  mbdef->mb_single_frame = (mb_single_frame_t*) inp_buff;
+  if (mbdef->id != mbdef->mb_single_frame->slave_id) {
     LOGW("Invalid Slave ID");
     return SLAVE_ID_ERR;
   }
   unsigned char crc_position = 0;
-  if (mb_single_frame->function_code >=READ_COIL_STATUS && mb_single_frame->function_code <= PRESET_SINGLE_REGISTER) {
+  if (mbdef->mb_single_frame->function_code >=READ_COIL_STATUS && mbdef->mb_single_frame->function_code <= PRESET_SINGLE_REGISTER) {
     crc_position = 6;
   }
-  else if (mb_single_frame->function_code >= FORCE_MULITPLE_COIL || mb_single_frame->function_code == PRESET_MULTIPLE_REGISTERS) {
+  else if (mbdef->mb_single_frame->function_code >= FORCE_MULITPLE_COIL || mbdef->mb_single_frame->function_code == PRESET_MULTIPLE_REGISTERS) {
     crc_position = inp_buff[6] + 7;
   }
 
@@ -80,16 +79,16 @@ error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
   }
   
 
-  unsigned short reg_address = COMBINE(mb_single_frame->register_address_h, mb_single_frame->register_address_l);
-  unsigned short no_of_register = COMBINE(mb_single_frame->value_h, mb_single_frame->value_l);
+  unsigned short reg_address = COMBINE(mbdef->mb_single_frame->register_address_h, mbdef->mb_single_frame->register_address_l);
+  unsigned short no_of_register = COMBINE(mbdef->mb_single_frame->value_h, mbdef->mb_single_frame->value_l);
   unsigned char index = 0; 
 
   
-  switch (mb_single_frame->function_code)
+  switch (mbdef->mb_single_frame->function_code)
   {
     case READ_COIL_STATUS:
       LOGI("Read Coil Status");
-      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.slave_id = mbdef->mb_single_frame->slave_id;
       mbdef->output.function_code = READ_COIL_STATUS;
       mbdef->output.data_len = 1;
       mbdef->output.data_buff = malloc((no_of_register / 8) + 1);
@@ -116,7 +115,7 @@ error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
       
     case READ_INPUT_STATUS:
       LOGI("Read Input Status");
-      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.slave_id = mbdef->mb_single_frame->slave_id;
       mbdef->output.function_code = READ_INPUT_STATUS;
       mbdef->output.data_len = 1;
       mbdef->output.data_buff = malloc((no_of_register / 8) + 1);
@@ -141,7 +140,7 @@ error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
 
     case READ_HOLDING_REGISTER:
       LOGI("Read Holding Register");
-      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.slave_id = mbdef->mb_single_frame->slave_id;
       mbdef->output.function_code = READ_HOLDING_REGISTER;
       mbdef->output.data_len = 0;
       mbdef->output.data_buff = malloc(no_of_register * 2);
@@ -162,7 +161,7 @@ error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
 
     case READ_INPUT_REGISTER:
       LOGI("Read Input Register");
-      mbdef->output.slave_id = mb_single_frame->slave_id;
+      mbdef->output.slave_id = mbdef->mb_single_frame->slave_id;
       mbdef->output.function_code = READ_HOLDING_REGISTER;
       mbdef->output.data_len = 0;
       mbdef->output.data_buff = malloc(no_of_register * 2);
@@ -182,7 +181,13 @@ error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
       break;
 
     case FORCE_SINGLE_COIL:
-      
+      LOGI("Write Single Coil");
+      unsigned short value_16 = 0;
+      if (no_of_register == 0xFF00) {
+        value_16 = 1;
+      }
+      mbdef->d_out.params[reg_address].set((void*)&value_16);
+
       break;
 
     case PRESET_SINGLE_REGISTER:
@@ -201,18 +206,38 @@ error_t mb_set_command_frame(mb_def_t *mbdef, char *inp_buff) {
 
 void mb_get_response(mb_def_t *mbdef, unsigned char **buff, unsigned char *len)
 {
-  mbdef->output.buff_len = 0;
-  mbdef->output.buff_len = mbdef->output.data_len + 3 + 2;
-  *len = mbdef->output.buff_len;
-  *buff = malloc((sizeof(char)) * (*len));
+  switch (mbdef->mb_single_frame->function_code) {
+    case READ_COIL_STATUS:
+    case READ_INPUT_STATUS:
+    case READ_INPUT_REGISTER:
+    case READ_HOLDING_REGISTER:
+      mbdef->output.buff_len = 0;
+      mbdef->output.buff_len = mbdef->output.data_len + 3 + 2;
+      *len = mbdef->output.buff_len;
+      *buff = malloc((sizeof(char)) * (*len));
 
-  memset(*buff, 0, mbdef->output.buff_len);
-  memcpy(*buff, &mbdef->output, 3);
-  memcpy((*buff) + 3, (char*)mbdef->output.data_buff, mbdef->output.data_len);
-  if (*buff[0] != 0) {
-    unsigned short crc = calc_crc(*buff, mbdef->output.buff_len - 2);
-    (*buff)[mbdef->output.buff_len - 2] = crc >> 8;
-    (*buff)[mbdef->output.buff_len - 1] = (unsigned char)crc;
+      memset(*buff, 0, mbdef->output.buff_len);
+      memcpy(*buff, &mbdef->output, 3);
+      memcpy((*buff) + 3, (char*)mbdef->output.data_buff, mbdef->output.data_len);
+      if (*buff[0] != 0) {
+        unsigned short crc = calc_crc(*buff, mbdef->output.buff_len - 2);
+        (*buff)[mbdef->output.buff_len - 2] = crc >> 8;
+        (*buff)[mbdef->output.buff_len - 1] = (unsigned char)crc;
+      }
+      memset(&mbdef->output, 0, mbdef->output.buff_len);
+    break;
+
+    case FORCE_SINGLE_COIL:
+    case PRESET_SINGLE_REGISTER:
+      *len = sizeof(mb_single_frame_t);
+      *buff = malloc((sizeof(char)) * (*len));
+
+      memset(*buff, 0, *len);
+      memcpy(*buff, mbdef->mb_single_frame, *len);
+    break;
+
+    default:
+    break;
   }
-  memset(&mbdef->output, 0, mbdef->output.buff_len);
+  
 }
